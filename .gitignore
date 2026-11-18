@@ -14,3 +14,14 @@ venv/
 *.jsonl.part
 *.jsonl.gz.part
 *.pcapng
+
+# Local diagnostic scripts and runtime data.
+/test_collectors.py
+/test_one.py
+/test_sniff.py
+/config.yaml
+/baseline.json
+/rules.d/
+/sessions/
+/pcap/
+*.log
