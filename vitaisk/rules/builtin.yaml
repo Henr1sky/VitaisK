@@ -1,0 +1,247 @@
+- id: service-fail
+  source: system
+  contains: ["failed to start", "failed with result"]
+  severity: ERROR
+- id: kernel-oom-killer
+  source: kernel
+  category: oom
+  severity: CRITICAL
+- id: kernel-panic
+  source: kernel
+  category: kernel_panic
+  severity: CRITICAL
+- id: kernel-segfault
+  source: kernel
+  category: segfault
+  severity: ERROR
+- id: ssh-brute-force
+  source: auth
+  category: ssh_failed
+  group_by: [host, src_ip]
+  threshold: 5
+  window: 60
+  severity: CRITICAL
+- id: ssh-invalid-user
+  source: auth
+  category: ssh_invalid_user
+  group_by: [host, src_ip]
+  threshold: 3
+  window: 60
+  severity: WARN
+- id: ssh-root-login
+  source: auth
+  category: ssh_login
+  equals: {user: root}
+  severity: WARN
+- id: ssh-fail-then-success
+  source: auth
+  category: ssh_failed
+  followed_by: {source: auth, category: ssh_login}
+  group_by: [host, src_ip, user]
+  threshold: 5
+  window: 300
+  severity: CRITICAL
+- id: sudo-fail
+  source: auth
+  category: [sudo_auth_fail, sudo_wrong_password]
+  group_by: [host, user]
+  threshold: 3
+  window: 30
+  severity: WARN
+- id: user-created
+  source: auth
+  category: user_added
+  severity: WARN
+- id: user-removed
+  source: auth
+  category: user_removed
+  severity: WARN
+- id: firewall-port-scan-tcp
+  source: firewall
+  category: firewall_block
+  equals: {protocol: TCP}
+  group_by: [host, src_ip, dst_ip]
+  distinct: dst_port
+  threshold: 20
+  window: 10
+  severity: WARN
+  suggested_actions: [BLOCK]
+- id: firewall-port-scan-udp
+  source: firewall
+  category: firewall_block
+  equals: {protocol: UDP}
+  group_by: [host, src_ip, dst_ip]
+  distinct: dst_port
+  threshold: 50
+  window: 10
+  severity: WARN
+  suggested_actions: [BLOCK]
+- id: inbound-scan-then-ssh-fail
+  source: firewall
+  category: firewall_block
+  equals: {protocol: TCP}
+  followed_by: {source: auth, category: ssh_failed}
+  group_by: [host, src_ip]
+  distinct: dst_port
+  threshold: 20
+  window: 60
+  match_window: 10
+  severity: ERROR
+- id: pam-fail
+  source: auth
+  category: pam_fail
+  group_by: [host, user]
+  threshold: 5
+  window: 60
+  severity: WARN
+- id: kernel-fs-corruption
+  source: kernel
+  contains: ["ext4-fs error", "xfs corruption", "journal abort"]
+  severity: CRITICAL
+- id: kernel-rcu-stall
+  source: kernel
+  contains: ["rcu stall detected", "detected stalls"]
+  severity: ERROR
+- id: kernel-netdev-watchdog
+  source: kernel
+  contains: ["netdev watchdog"]
+  severity: ERROR
+- id: service-timeout-start
+  source: system
+  regex: 'start operation timed out|start job timed out|failed to start .*timeout'
+  severity: ERROR
+- id: service-dependency-fail
+  source: system
+  contains: ["dependency failed for"]
+  severity: ERROR
+- id: service-exit-signal
+  source: system
+  regex: 'main process exited, code=killed, status=\d+/(?:SEGV|ABRT)'
+  severity: ERROR
+- id: service-port-bind-fail
+  source: system
+  regex: 'bind\b.*address already in use'
+  severity: ERROR
+- id: service-core-dump
+  source: system
+  category: systemd-coredump
+  contains: ["dumped core"]
+  severity: ERROR
+- id: kernel-oom-panic
+  source: kernel
+  category: kernel_panic
+  contains: ["out of memory"]
+  severity: CRITICAL
+- id: kernel-oops
+  source: kernel
+  category: kernel_oops
+  severity: ERROR
+- id: kernel-null-deref
+  source: kernel
+  contains: ["kernel null pointer dereference"]
+  severity: ERROR
+- id: kernel-bug-at
+  source: kernel
+  contains: ["kernel bug at"]
+  severity: ERROR
+- id: kernel-segfault-burst
+  source: kernel
+  category: segfault
+  group_by: [host]
+  threshold: 3
+  window: 60
+  severity: WARN
+- id: kernel-hung-task
+  source: kernel
+  contains: ["blocked for more than 120 seconds"]
+  severity: ERROR
+- id: kernel-hung-task-panic
+  source: kernel
+  category: kernel_panic
+  contains: ["hung_task"]
+  severity: CRITICAL
+- id: kernel-soft-lockup
+  source: kernel
+  contains: ["soft lockup", "cpu stuck"]
+  severity: ERROR
+- id: kernel-hard-lockup
+  source: kernel
+  contains: ["hard lockup"]
+  severity: CRITICAL
+- id: kernel-nmi-watchdog
+  source: kernel
+  contains: ["nmi watchdog: bug"]
+  severity: ERROR
+- id: kernel-mce
+  source: kernel
+  contains: ["machine check exception"]
+  severity: CRITICAL
+- id: kernel-mce-fatal
+  source: kernel
+  category: kernel_panic
+  contains: ["fatal machine check"]
+  severity: CRITICAL
+- id: kernel-edac
+  source: kernel
+  regex: 'EDAC.*error|corrected memory error'
+  severity: ERROR
+- id: kernel-io-error
+  source: kernel
+  contains: ["i/o error, dev"]
+  severity: ERROR
+- id: kernel-ata-error
+  source: kernel
+  regex: '\bata\d+.*error|unrecoverable read error'
+  severity: ERROR
+- id: kernel-fs-readonly
+  source: kernel
+  regex: 'remounting filesystem read-only|filesystem mounted read-only'
+  severity: ERROR
+- id: kernel-thermal
+  source: kernel
+  contains: ["temperature above threshold", "thermal throttling"]
+  severity: WARN
+- id: kernel-module-fail
+  source: kernel
+  regex: 'module.*(?:verification failed|failed to load)'
+  severity: WARN
+- id: kernel-tainted
+  source: kernel
+  contains: ["tainted:"]
+  severity: WARN
+- id: kernel-calltrace
+  source: kernel
+  regex: 'WARNING:.*\bat\s+\S+\.c:'
+  severity: WARN
+- id: kernel-init-killed
+  source: kernel
+  contains: ["attempted to kill init!"]
+  severity: CRITICAL
+- id: kernel-vfs-mount-fail
+  source: kernel
+  contains: ["vfs: unable to mount root fs"]
+  severity: CRITICAL
+- id: kernel-sysrq-crash
+  source: kernel
+  contains: ["sysrq: trigger a crashdump"]
+  severity: WARN
+- id: kernel-syn-flood
+  source: kernel
+  contains: ["possible syn flooding"]
+  severity: WARN
+- id: kernel-neigh-overflow
+  source: kernel
+  contains: ["neighbour table overflow"]
+  severity: WARN
+- id: kernel-promisc
+  source: kernel
+  contains: ["entered promiscuous mode"]
+  severity: WARN
+- id: kernel-conntrack-error
+  source: kernel
+  regex: 'conntrack.*error|__ratelimit: .*messages suppressed'
+  severity: WARN
+- id: kernel-icmp-invalid
+  source: kernel
+  regex: 'invalid ICMP type|ICMP.*bad checksum'
+  severity: INFO
