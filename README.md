@@ -9,12 +9,25 @@ Monitor local de sinais vitais do Linux. O painel acompanha o pulso dos eventos 
 Use Linux com **Python 3.10 ou superior**, `pip` e suporte a `venv`. Em distribuições que empacotam esses componentes separadamente, instale-os pelo gerenciador de pacotes. Para clonar o repositório, você também precisa de Git e acesso ao repositório.
 
 ```bash
+# Baixa o código do VitaisK do GitHub para uma pasta local.
 git clone https://github.com/Henr1sky/VitaisK.git
+
+# Entra na pasta do projeto recém-clonado.
 cd VitaisK
+
+# Cria um ambiente virtual Python para isolar as dependências do projeto.
 python3 -m venv .venv
+
+# Ativa o ambiente virtual no terminal atual.
 source .venv/bin/activate
+
+# Instala o VitaisK e suas dependências no ambiente virtual ativo.
 python -m pip install .
+
+# Verifica o ambiente, as ferramentas disponíveis e os caminhos de configuração.
 vitaisk doctor
+
+# Inicia o monitoramento com a interface em português.
 vitaisk --lang pt watch
 ```
 
@@ -50,9 +63,16 @@ Os rótulos de origem dos filtros são `system`, `auth`, `kernel`, `firewall`, `
 ## Painel e modo em fluxo
 
 ```bash
+# Inicia o monitor com as preferências salvas. O padrão é o painel Importantes.
 vitaisk watch
+
+# Abre a visão Tudo, que inclui eventos de qualquer gravidade permitida pelos filtros.
 vitaisk watch --view all
+
+# Abre a visão Anomalias, que exibe apenas eventos com alertas.
 vitaisk watch --view anomalies
+
+# Imprime os eventos em linhas contínuas no terminal, com a visão Tudo.
 vitaisk watch --mode stream --view all
 ```
 
@@ -83,8 +103,13 @@ O pulso mostra o volume por segundo. Verde indica `DEBUG/INFO`, amarelo indica `
 | `--profile NOME` | Aplica uma combinação de filtros definida no arquivo de configuração. |
 
 ```bash
+# Exibe eventos de autenticação ou firewall com gravidade WARN ou superior.
 vitaisk watch --view all --source auth --source firewall --level WARN
+
+# Mostra em fluxo as mensagens com ssh ou sudo, excluindo as que contêm session closed.
 vitaisk watch --mode stream --view all --grep 'ssh|sudo' --ignore 'session closed'
+
+# Exibe eventos associados ao IP de exemplo sem gravar a sessão.
 vitaisk watch --view all --ip 192.0.2.10 --no-save
 ```
 
@@ -105,9 +130,16 @@ Abra com `vitaisk watch --profile ssh`. No painel, **F** também permite editar 
 O motor avalia regras pontuais, contagens em uma janela e sequências entre eventos. Por exemplo, `ssh-fail-then-success` correlaciona cinco falhas e um login posterior pelo mesmo host, IP e usuário. `inbound-scan-then-ssh-fail` correlaciona registros de bloqueio TCP em portas distintas com uma falha de SSH no mesmo host e IP. A cobertura depende de os eventos e campos necessários estarem disponíveis. Ações como `BLOCK` são sugestões exibidas no alerta.
 
 ```bash
+# Lista as regras de detecção disponíveis.
 vitaisk rules list
+
+# Mostra a definição da regra de falhas de SSH seguidas de login.
 vitaisk rules show ssh-fail-then-success
+
+# Testa a detecção de uma mensagem sintética de erro do kernel.
 vitaisk rules test --source kernel 'EXT4-fs error on sda'
+
+# Exibe anomalias com o nível de sensibilidade alto.
 vitaisk watch --view anomalies --sensitivity high
 ```
 
@@ -130,10 +162,19 @@ Para usuários comuns, `XDG_CONFIG_HOME` e `XDG_DATA_HOME` podem alterar os dire
 Uma sessão salva eventos, linhas originais e alertas antes dos filtros de tela. O formato padrão é JSONL compactado. O arquivo temporário `.part` é finalizado quando a sessão encerra normalmente ou gira para um novo arquivo. A configuração inicial retém até 20 sessões finalizadas e 500 MiB de histórico, removendo as mais antigas conforme necessário.
 
 ```bash
+# Lista as sessões finalizadas que estão disponíveis no histórico local.
 vitaisk sessions list
+
+# Exibe os detalhes da sessão finalizada mais recente.
 vitaisk sessions show latest
+
+# Resume contagens por origem, gravidade e regra na sessão mais recente.
 vitaisk summary --session latest
+
+# Exporta a sessão mais recente para um arquivo JSON.
 vitaisk export --session latest --format json --output sessao.json
+
+# Exporta a sessão mais recente para um arquivo CSV.
 vitaisk export --session latest --format csv --output sessao.csv
 ```
 
@@ -142,6 +183,7 @@ Use `vitaisk watch --no-save` para uma execução sem sessão, ou `vitaisk confi
 Para gravar pacotes sob demanda, execute em uma interface à qual você tem acesso:
 
 ```bash
+# Captura pacotes na interface local lo por até 10 segundos, com limite de 20 MiB.
 vitaisk capture --interface lo --duration 10s --max-size 20M
 ```
 
@@ -152,8 +194,13 @@ A coleta é incremental. Os coletores acompanham novas entradas ou amostram o es
 A ferramenta roda localmente, com opção de saída em fluxo e sem dependência de um servidor, banco de dados ou ambiente gráfico. Em máquinas com pouco recurso, você pode reduzir a taxa de atualização, aumentar o intervalo das métricas e ajustar a retenção em disco. Por exemplo:
 
 ```bash
+# Define duas atualizações do painel por segundo.
 vitaisk config set refresh_hz 2
+
+# Define um intervalo de cinco segundos entre amostras de métricas.
 vitaisk config set metrics_interval 5
+
+# Define o limite do histórico de sessões em 200 MiB.
 vitaisk config set max_history_size_mb 200
 ```
 
