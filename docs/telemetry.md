@@ -69,3 +69,16 @@ Defina `rule_id` com um ID do catálogo e `source` com uma origem conhecida. A c
 ```
 
 Esse formato permite que sensores de firewall, ferramentas de monitoramento ou outras integrações tragam evidências que o VitaisK não consegue medir sozinho. Ações propostas no catálogo aparecem como sugestões. As sessões e exportações guardam a origem e as evidências com o alerta.
+
+## Teste de ponta a ponta sem tráfego externo
+
+Para validar regras, filtros, correlações e persistência em conjunto, rode a suíte local na raiz do repositório:
+
+```bash
+# Executa a validação automatizada usando somente dados sintéticos.
+python -m unittest discover -s tests -p 'test_telemetry.py' -v
+```
+
+O cenário de regressão alimenta o monitor com sinais fictícios, incluindo uma combinação de autenticação que produz alerta crítico. Sinais de hosts diferentes ficam separados. Os filtros de origem, IP, gravidade, inclusão e exclusão restringem o que aparece no terminal. A exportação da sessão mantém todos os registros válidos e as evidências da correlação. A suíte também cobre rotação do arquivo, linhas parciais e rejeição de linhas inválidas ou grandes demais.
+
+Para uma conferência visual, abra o monitor em um terminal com cores e um arquivo de teste separado. Use a observação estruturada acima como referência e grave cada objeto em uma linha nova depois que o painel estiver aberto. Um alerta de nível `ERROR` ou `CRITICAL` deve aparecer em vermelho no painel e no pulso. A linha do painel mostra o ID da correlação junto à mensagem original. Pressione **Enter** para ver os sinais associados ou **C** para conferir o coletor e a contagem de rejeições.
