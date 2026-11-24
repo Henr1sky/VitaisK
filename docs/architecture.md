@@ -5,8 +5,9 @@ O VitaisK coleta eventos do host Linux e avalia tudo localmente. O painel e o mo
 ```mermaid
 flowchart LR
     A["Coletores em threads"] --> B["Fila limitada"]
+    T["Telemetria JSONL opcional"] --> B
     B --> C["Eventos normalizados"]
-    C --> D["Regras, correlações e estatística"]
+    C --> D["Regras, correlações e triagem"]
     C --> E["Sessão JSONL"]
     D --> E
     D --> F["Filtros de visualização"]
@@ -26,7 +27,7 @@ flowchart LR
 | Conexões | Amostras da tabela de conexões usando `ss`. |
 | Captura contínua | Opcional, desativada por padrão. Usa `tcpdump` para amostrar TCP SYN sem ACK. |
 
-O comando `vitaisk capture` é independente do monitor. Ele grava um PCAP sob demanda e precisa de `tcpdump` e acesso à interface.
+A [integração de telemetria](telemetry.md) recebe observações e classificações de fontes locais configuradas pelo operador. O comando `vitaisk capture` é independente do monitor. Ele grava um PCAP sob demanda e precisa de `tcpdump` e acesso à interface.
 
 ## Processamento
 

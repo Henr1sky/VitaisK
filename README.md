@@ -154,6 +154,24 @@ vitaisk rules test --source kernel 'EXT4-fs error on sda'
 vitaisk watch --view anomalies --sensitivity high
 ```
 
+O catálogo inclui **230 correlações** e **10 políticas de priorização**. Das 362 entradas, **75 regras** usam os coletores locais, **59 regras** avaliam observações estruturadas e **228 entradas** dependem de classificação por um sensor externo. Os alertas correlacionados aparecem no painel e no modo em fluxo. As sessões e exportações preservam as evidências e as decisões de triagem.
+
+```bash
+# Lista as regras por tipo de entrada: nativa, estruturada ou externa.
+vitaisk rules coverage
+
+# Mostra quais sinais cada correlação precisa receber.
+vitaisk rules correlations
+
+# Lista as políticas de priorização dos alertas.
+vitaisk rules priorities
+
+# Acompanha observações e alertas de um arquivo JSONL produzido por uma fonte confiável.
+vitaisk watch --signal-file /caminho/telemetria.jsonl --view anomalies
+```
+
+Veja os formatos JSONL e exemplos de integração no [guia de telemetria](docs/telemetry.md).
+
 A sensibilidade ajusta o limiar de confiança. O motor também pode detectar picos estatísticos de erros usando uma referência calculada no próprio host. Consulte a [referência de regras](docs/rules.md) para exemplos de YAML e testes com eventos sintéticos.
 
 ## Dados, sessões e captura
@@ -221,6 +239,7 @@ Essas escolhas permitem usar a mesma ferramenta em diferentes distribuições Li
 
 - [Arquitetura, fontes e processamento](docs/architecture.md)
 - [Referência de regras e correlações](docs/rules.md)
+- [Integração de telemetria estruturada e sinais externos](docs/telemetry.md)
 - [Adaptação do VitaisK para Metasploitable 2](https://github.com/Henr1sky/VitaisK-Metasploitable)
 - [Como contribuir](CONTRIBUTING.md)
 - [Licença MIT](LICENSE)

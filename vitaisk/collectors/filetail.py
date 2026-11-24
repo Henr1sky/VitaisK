@@ -10,7 +10,7 @@ from ..utils import follow_file, eprint
 from .base import Collector, EventQueue
 from .parsers import (
     parse_syslog_line, parse_syslog_ts,
-    parse_auth_line, parse_kernel_line, parse_firewall_line,
+    kernel_device, parse_auth_line, parse_kernel_line, parse_firewall_line,
 )
 
 
@@ -122,6 +122,9 @@ class SyslogCollector(BaseFileCollector):
                 user = a.get("user")
                 src_ip = a.get("src_ip")
                 extra.update(a.get("extra", {}))
+
+        if source == "kernel":
+            extra["device"] = kernel_device(message)
 
         # Raise severity heuristically if nothing matched
         if severity == Severity.INFO:
@@ -235,7 +238,7 @@ class KernelLogCollector(BaseFileCollector):
                 raw=line,
                 host=parsed["host"],
                 pid=k.get("pid") or parsed["pid"],
-                extra=k.get("extra", {}),
+                extra={**k.get("extra", {}), "device": kernel_device(message)},
             )
 
         return Event(
@@ -247,7 +250,7 @@ class KernelLogCollector(BaseFileCollector):
             raw=line,
             host=parsed["host"],
             pid=parsed["pid"],
-            extra={},
+            extra={"device": kernel_device(message)},
         )
 
 
