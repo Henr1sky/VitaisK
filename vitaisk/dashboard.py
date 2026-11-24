@@ -125,8 +125,11 @@ class ViewFilter:
         )
 
 
-def _alert_text(alert):
-    message = alert.localized_reason(current_lang())
+def _alert_text(alert, *, compact=False):
+    if compact and alert.evidence:
+        message = f"{label('Correlation', 'Correlação')}: {alert.rule_id}"
+    else:
+        message = alert.localized_reason(current_lang())
     if alert.suggested_actions:
         actions = ", ".join(alert.suggested_actions)
         message += f" [{label('suggested', 'sugerido')}: {actions}]"
@@ -148,13 +151,13 @@ def _display_alerts(alerts):
     )
 
 
-def event_row(event, alerts):
+def event_row(event, alerts, *, compact=False):
     level = effective_level(event, alerts)
     message = Text()
     for alert in _display_alerts(alerts):
         if message:
             message.append("  ·  ", "dim")
-        message.append_text(_alert_text(alert))
+        message.append_text(_alert_text(alert, compact=compact))
     if message:
         message.append("  ·  ", "dim")
     message.append(_clean(event.message))
@@ -443,7 +446,8 @@ class Dashboard:
         ):
             selected = index == self.selection
             table.add_row(
-                Text("›" if selected else "", style="bold bright_cyan"), *event_row(event, alerts),
+                Text("›" if selected else "", style="bold bright_cyan"),
+                *event_row(event, alerts, compact=True),
                 style="on grey15" if selected else None,
             )
             count += 1
