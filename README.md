@@ -221,6 +221,6 @@ Essas escolhas permitem usar a mesma ferramenta em diferentes distribuições Li
 
 - [Arquitetura, fontes e processamento](docs/architecture.md)
 - [Referência de regras e correlações](docs/rules.md)
-- [Adaptação para Metasploiable 2]([VitaisK-Metasploitable](https://github.com/Henr1sky/VitaisK-Metasploitable))
+- [Adaptação do VitaisK para Metasploitable 2](https://github.com/Henr1sky/VitaisK-Metasploitable)
 - [Como contribuir](CONTRIBUTING.md)
 - [Licença MIT](LICENSE)
