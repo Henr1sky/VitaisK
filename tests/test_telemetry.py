@@ -13,7 +13,7 @@ from vitaisk.cli import cli
 from vitaisk.collectors.base import EventQueue
 from vitaisk.collectors.signals import SignalCollector
 from vitaisk.config import Config
-from vitaisk.dashboard import effective_level
+from vitaisk.dashboard import effective_level, event_row
 from vitaisk.engine.pipeline import Pipeline
 from vitaisk.events import Severity
 from vitaisk.rules.loader import load_correlations, load_priorities, load_rules, signal_levels
@@ -221,3 +221,85 @@ class TelemetryTests(TestCase):
         self.assertEqual([alert.rule_id for alert in pipeline.process(a)], [first])
         self.assertEqual([alert.rule_id for alert in pipeline.process(b)], [second])
         self.assertEqual([alert.rule_id for alert in pipeline.process(c)], [second, rule["id"]])
+
+    def test_watch_filters_simulated_incident_but_exports_all_valid_records(self):
+        from unittest.mock import patch
+
+        correlation_id = "ssh-success-after-brute-force"
+        examples = [
+            record("ssh-brute-force", 10, source="auth", message="baseline marker"),
+            record("ssh-fail-then-success", 11, source="auth", host="other-host",
+                   message="simulado ocultar"),
+            record("ssh-fail-then-success", 12, source="auth", message="simulado confirmado"),
+            record("ssh-brute-force", 13, source="auth", src_ip="192.0.2.20",
+                   message="simulado outro IP"),
+            record("ssh-brute-force", 14, source="firewall", message="simulado outra fonte"),
+            record("ssh-root-login", 15, source="auth", message="simulado baixa gravidade"),
+            record("ssh-brute-force", 16, source="auth", src_ip="192.0.2.20",
+                   message="sem marcador"),
+            record("ssh-brute-force", 17, source="auth", user="other-user",
+                   message="simulado ocultar"),
+        ]
+
+        class FixtureManager:
+            def __init__(manager, config):
+                manager.queue = manager
+                manager.pending = iter(self.decode(data) for data in examples)
+                manager.interrupted = False
+
+            def start(manager):
+                pass
+
+            def stop(manager):
+                pass
+
+            def get(manager, timeout):
+                event = next(manager.pending, None)
+                if event is None and not manager.interrupted:
+                    manager.interrupted = True
+                    raise KeyboardInterrupt
+                return event
+
+        runner = CliRunner()
+        with TemporaryDirectory() as folder:
+            tmp = Path(folder)
+            config = tmp / "config.yaml"
+            config.write_text("baseline_enabled: false\n")
+            env = {"XDG_CONFIG_HOME": folder, "XDG_DATA_HOME": folder}
+            with patch("vitaisk.watch.CollectorManager", FixtureManager):
+                result = runner.invoke(cli, [
+                    "--lang", "pt", "--config", str(config), "watch", "--mode", "stream",
+                    "--view", "anomalies", "--level", "CRITICAL", "--source", "auth",
+                    "--grep", "simulado", "--ignore", "ocultar", "--ip", "192.0.2.10",
+                ], env=env, terminal_width=160)
+            self.assertEqual(result.exit_code, 0, result.output)
+            self.assertEqual(result.stdout.count(correlation_id), 1)
+            self.assertNotIn("ssh-fail-then-success: 1", result.stdout)
+            for data in examples:
+                self.assertEqual(data["message"] in result.stdout,
+                                 data["message"] == "simulado confirmado")
+            exported = runner.invoke(cli, ["export", "--format", "json"], env=env)
+            self.assertEqual(exported.exit_code, 0, exported.output)
+            rows = json.loads(exported.stdout)
+            self.assertEqual(len(rows), len(examples))
+            self.assertEqual([row["message"] for row in rows], [item["message"] for item in examples])
+            compounds = [alert for row in rows for alert in row.get("anomalies", [])
+                         if alert["rule_id"] == correlation_id]
+            self.assertEqual(len(compounds), 1)
+            self.assertEqual(compounds[0]["severity"], "CRITICAL")
+            self.assertEqual([item["observation_id"] for item in compounds[0]["evidence"]],
+                             ["10", "12"])
+
+
+    def test_dashboard_correlation_summary_keeps_room_for_event_message(self):
+        pipeline = Pipeline(self.rules, correlations=self.correlations)
+        first = self.decode(record("ssh-brute-force", 1, source="auth"))
+        second = self.decode(record("ssh-fail-then-success", 2, source="auth", message="Evento legível"))
+        list(pipeline.process(first))
+        alerts = list(pipeline.process(second))
+        compact = event_row(second, alerts, compact=True)[-1].plain
+        detailed = event_row(second, alerts)[-1].plain
+        self.assertIn("ssh-success-after-brute-force", compact)
+        self.assertIn("Evento legível", compact)
+        self.assertNotIn("ssh-fail-then-success", compact)
+        self.assertIn("ssh-brute-force + ssh-fail-then-success", detailed)
